@@ -1,0 +1,10 @@
+.wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  &[data-is-show='false'] {
+    opacity: 0;
+  }
+}

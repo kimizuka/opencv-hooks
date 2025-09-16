@@ -1,0 +1,14 @@
+.wrapper {
+  opacity: 0;
+
+  &[data-is-show='true'] {
+    opacity: 1;
+  }
+}
+
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px;
+}

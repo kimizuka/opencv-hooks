@@ -1,0 +1,34 @@
+.wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: gray;
+
+  &[data-is-show='false'] {
+    opacity: 0;
+  }
+}
+
+.box {
+  position: relative;
+}
+
+.needle {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: auto;
+
+  &[data-color='r'] {
+    border: solid red 1px;
+  }
+
+  &[data-color='g'] {
+    border: solid green 1px;
+  }
+
+  &[data-color='b'] {
+    border: solid blue 1px;
+  }
+}

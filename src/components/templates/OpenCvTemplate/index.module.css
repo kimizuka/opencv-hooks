@@ -1,0 +1,15 @@
+.wrapper {
+  display: inline-flex;
+  position: relative;
+}
+
+.rect {
+  position: absolute;
+  top: 40px;
+  left: 0;
+  right: 0;
+  margin: auto;
+  border: solid 1px red;
+  width: 16px;
+  height: 16px;
+}

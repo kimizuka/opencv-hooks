@@ -1,0 +1,21 @@
+{
+  "editor.codeActionsOnSave": {
+    "source.organizeImports.biome": "explicit"
+  },
+  "editor.formatOnSave": true,
+  "files.associations": {
+    "*.css": "css"
+  },
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    "*.module.css": "*.module.css.d.ts, *.module.css.d.ts.map"
+  },
+  "[javascript][typescript][javascriptreact][typescriptreact][json][jsonc]": {
+    "editor.tabSize": 2,
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[css]": {
+    "editor.tabSize": 2,
+    "editor.defaultFormatter": "biomejs.biome"
+  }
+}
