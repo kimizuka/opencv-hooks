@@ -21,6 +21,11 @@ export const red2Range = {
   max: [255, 255, 255],
 };
 
+export const fixedRedRange = {
+  min: [212, 64, 0],
+  max: [255, 255, 255],
+};
+
 export const greenRange = {
   min: [43, 64, 0],
   max: [127, 255, 255],
@@ -37,14 +42,16 @@ export const yellowRange = {
 };
 
 export const fixedYellowRange = {
-  min: [20, 150, 80],
-  max: [30, 255, 200],
+  min: [20, 120, 80],
+  max: [60, 255, 200],
 };
 
 const cameraWidth = 320;
 const cameraHeight = 240;
 const needleWidth = 4;
 const x = -(cameraWidth - needleWidth) / 2;
+
+const bpm = 120;
 
 function getWhitePixelPercent(
   context: CanvasRenderingContext2D | null,
@@ -72,7 +79,7 @@ function getWhitePixelPercent(
   return count / totalPixelCount;
 }
 
-export function MusicLazySusanPageTemplate() {
+export function MusicLazySusanRhythmPageTemplate() {
   const { isLoading: isLoadingOpenCv, cv } = useOpenCv();
   const { isLoading: isLoadingWebCamera, stream } = useStream({
     video: {
@@ -100,19 +107,23 @@ export function MusicLazySusanPageTemplate() {
   const gRef = useRef<HTMLCanvasElement | null>(null);
   const bRef = useRef<HTMLCanvasElement | null>(null);
   const yRef = useRef<HTMLCanvasElement | null>(null);
+  const isPlayRRef = useRef(false);
+  const isPlayGRef = useRef(false);
+  const isPlayBRef = useRef(false);
+  const isPlayYRef = useRef(false);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const [baseGain, setBaseGain] = useState<GainNode | null>(null);
   const [cGain, setCGain] = useState<GainNode | null>(null);
   const [eGain, setEGain] = useState<GainNode | null>(null);
   const [gGain, setGGain] = useState<GainNode | null>(null);
-  const [drumAudio, setDrumAudio] = useState<HTMLAudioElement | null>(null);
-  const [isPlayC, setIsPlayC] = useState(false);
-  const [isPlayE, setIsPlayE] = useState(false);
-  const [isPlayG, setIsPlayG] = useState(false);
-  const [isPlayDrum, setIsPlayDrum] = useState(false);
+  const [drumGain, setDrumGain] = useState<GainNode | null>(null);
   const rNeedleRef = useRef<HTMLCanvasElement | null>(null);
   const gNeedleRef = useRef<HTMLCanvasElement | null>(null);
   const bNeedleRef = useRef<HTMLCanvasElement | null>(null);
   const yNeedleRef = useRef<HTMLCanvasElement | null>(null);
+  const timerRef = useRef<number>(-1);
+  const beatRef = useRef<boolean>(false);
+  const [beat, setBeat] = useState(beatRef.current);
 
   const play = useCallback(() => {
     if (
@@ -156,12 +167,10 @@ export function MusicLazySusanPageTemplate() {
         cameraHeight,
       );
 
-      setIsPlayC(0 < rWhitePixelPercent);
-      setIsPlayE(0 < gWhitePixelPercent);
-      setIsPlayG(0 < bWhitePixelPercent);
-      setIsPlayDrum(0 < yWhitePixelPercent);
-
-      // console.log(rWhitePixelPercent, gWhitePixelPercent, bWhitePixelPercent);
+      isPlayRRef.current = 0 < rWhitePixelPercent;
+      isPlayGRef.current = 0 < gWhitePixelPercent;
+      isPlayBRef.current = 0 < bWhitePixelPercent;
+      isPlayYRef.current = 0 < yWhitePixelPercent;
     }
   }, [rNeedleContext, gNeedleContext, bNeedleContext, yNeedleContext]);
 
@@ -176,8 +185,8 @@ export function MusicLazySusanPageTemplate() {
       [
         {
           ref: rRef,
-          min: red2Range.min,
-          max: red2Range.max,
+          min: fixedRedRange.min,
+          max: fixedRedRange.max,
         },
         {
           ref: gRef,
@@ -228,7 +237,7 @@ export function MusicLazySusanPageTemplate() {
     function handleClickWindow() {
       const audioContext = new AudioContext();
 
-      [261.6, 329.6, 392.0].forEach((frequency) => {
+      [65.4, 130.8, 261.6, 329.6, 392.0].forEach((frequency) => {
         const gainNode = audioContext.createGain();
         const oscillator = audioContext.createOscillator();
 
@@ -241,6 +250,12 @@ export function MusicLazySusanPageTemplate() {
         gainNode.connect(audioContext.destination);
 
         switch (frequency) {
+          case 65.4:
+            setDrumGain(gainNode);
+            break;
+          case 130.8:
+            setBaseGain(gainNode);
+            break;
           case 261.6:
             setCGain(gainNode);
             break;
@@ -256,52 +271,107 @@ export function MusicLazySusanPageTemplate() {
         oscillator.start();
       });
 
-      (() => {
-        const gainNode = audioContext.createGain();
-        const audioElement = document.createElement('audio');
-        audioElement.src = `/drum.mp3`;
-        audioElement.load();
-
-        const track = audioContext.createMediaElementSource(audioElement);
-
-        track.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        audioElement.volume = 1;
-        setDrumAudio(audioElement);
-      })();
-
       audioContextRef.current = audioContext;
       window.removeEventListener('click', handleClickWindow);
     }
   }, []);
 
   useEffect(() => {
-    if (audioContextRef.current) {
-      if (isPlayC) {
-        cGain?.gain.setValueAtTime(1, audioContextRef.current.currentTime);
-      } else {
-        cGain?.gain.setValueAtTime(0, audioContextRef.current.currentTime);
-      }
+    if (baseGain && cGain && eGain && gGain && drumGain) {
+      clearInterval(timerRef.current);
+      timerRef.current = window.setInterval(
+        () => {
+          if (audioContextRef.current) {
+            beatRef.current = true;
+            setBeat(beatRef.current);
+            baseGain?.gain.setValueAtTime(
+              1,
+              audioContextRef.current.currentTime,
+            );
 
-      if (isPlayE) {
-        eGain?.gain.setValueAtTime(1, audioContextRef.current.currentTime);
-      } else {
-        eGain?.gain.setValueAtTime(0, audioContextRef.current.currentTime);
-      }
+            if (isPlayRRef.current) {
+              if (cGain?.gain.value === 0) {
+                cGain.gain.setValueAtTime(
+                  1,
+                  audioContextRef.current.currentTime,
+                );
+              }
+            } else {
+              if (cGain?.gain.value === 1) {
+                cGain.gain.setValueAtTime(
+                  0,
+                  audioContextRef.current.currentTime,
+                );
+              }
+            }
 
-      if (isPlayG) {
-        gGain?.gain.setValueAtTime(1, audioContextRef.current.currentTime);
-      } else {
-        gGain?.gain.setValueAtTime(0, audioContextRef.current.currentTime);
-      }
+            if (isPlayGRef.current) {
+              if (eGain?.gain.value === 0) {
+                eGain.gain.setValueAtTime(
+                  1,
+                  audioContextRef.current.currentTime,
+                );
+              }
+            } else {
+              if (eGain?.gain.value === 1) {
+                eGain.gain.setValueAtTime(
+                  0,
+                  audioContextRef.current.currentTime,
+                );
+              }
+            }
+
+            if (isPlayBRef.current) {
+              if (gGain?.gain.value === 0) {
+                gGain.gain.setValueAtTime(
+                  1,
+                  audioContextRef.current.currentTime,
+                );
+              }
+            } else {
+              if (gGain?.gain.value === 1) {
+                gGain.gain.setValueAtTime(
+                  0,
+                  audioContextRef.current.currentTime,
+                );
+              }
+            }
+
+            if (isPlayYRef.current) {
+              if (drumGain?.gain.value === 0) {
+                drumGain.gain.setValueAtTime(
+                  1,
+                  audioContextRef.current.currentTime,
+                );
+              }
+            } else {
+              if (drumGain?.gain.value === 1) {
+                drumGain.gain.setValueAtTime(
+                  0,
+                  audioContextRef.current.currentTime,
+                );
+              }
+            }
+
+            setTimeout(
+              () => {
+                if (audioContextRef.current) {
+                  beatRef.current = false;
+                  setBeat(beatRef.current);
+                  baseGain?.gain.setValueAtTime(
+                    0,
+                    audioContextRef.current.currentTime,
+                  );
+                }
+              },
+              1000 / (bpm / 60) / 4,
+            );
+          }
+        },
+        1000 / (bpm / 60),
+      );
     }
-  }, [isPlayC, isPlayE, isPlayG, cGain, eGain, gGain]);
-
-  useEffect(() => {
-    if (isPlayDrum) {
-      drumAudio?.play();
-    }
-  }, [isPlayDrum, drumAudio]);
+  }, [baseGain, cGain, eGain, gGain, drumGain]);
 
   useEffect(() => {
     if (rNeedleRef.current) {
@@ -346,7 +416,7 @@ export function MusicLazySusanPageTemplate() {
   }, [isLoading, cv, previewRef.current, render]);
 
   return (
-    <div data-is-show={!isLoading} className={styles.wrapper}>
+    <div data-is-show={!isLoading} data-beat={beat} className={styles.wrapper}>
       <div className={styles.box}>
         <canvas ref={previewRef} />
       </div>

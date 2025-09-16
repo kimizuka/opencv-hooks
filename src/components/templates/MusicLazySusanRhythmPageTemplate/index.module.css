@@ -2,7 +2,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 16px;
   background: gray;
 
   &[data-is-show='false'] {
@@ -12,6 +12,11 @@
 
 .box {
   position: relative;
+  transition: scale 0.1s;
+
+  [data-beat='true'] & {
+    scale: 1.04;
+  }
 }
 
 .needle {
