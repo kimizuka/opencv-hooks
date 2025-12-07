@@ -1,6 +1,8 @@
 'use client';
 
+import classNames from 'classnames';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Sushi } from '@/components/elements/Sushi';
 import { type OpenCV, useOpenCv } from '@/hooks/useOpenCv';
 import { useStream } from '@/hooks/useStream';
 import { useVideoStreamPreviewGl } from '@/hooks/useVideoStreamPreviewGl';
@@ -113,16 +115,18 @@ export function MusicLazySusanRhythmPageTemplate() {
   const isPlayYRef = useRef(false);
   const audioContextRef = useRef<AudioContext | null>(null);
   const [baseGain, setBaseGain] = useState<GainNode | null>(null);
-  const [cGain, setCGain] = useState<GainNode | null>(null);
-  const [eGain, setEGain] = useState<GainNode | null>(null);
-  const [gGain, setGGain] = useState<GainNode | null>(null);
-  const [drumGain, setDrumGain] = useState<GainNode | null>(null);
+  const [c2Gain, setC2Gain] = useState<GainNode | null>(null);
+  const [c4Gain, setC4Gain] = useState<GainNode | null>(null);
+  const [e4Gain, setE4Gain] = useState<GainNode | null>(null);
+  const [g4Gain, setG4Gain] = useState<GainNode | null>(null);
   const rNeedleRef = useRef<HTMLCanvasElement | null>(null);
   const gNeedleRef = useRef<HTMLCanvasElement | null>(null);
   const bNeedleRef = useRef<HTMLCanvasElement | null>(null);
   const yNeedleRef = useRef<HTMLCanvasElement | null>(null);
-  const timerRef = useRef<number>(-1);
-  const beatRef = useRef<boolean>(false);
+  const timerRef = useRef(-1);
+  const beatRef = useRef(false);
+  const offBeatRef = useRef(true);
+  const isOpenRef = useRef(false);
   const [beat, setBeat] = useState(beatRef.current);
 
   const play = useCallback(() => {
@@ -251,19 +255,19 @@ export function MusicLazySusanRhythmPageTemplate() {
 
         switch (frequency) {
           case 65.4:
-            setDrumGain(gainNode);
+            setC2Gain(gainNode);
             break;
           case 130.8:
             setBaseGain(gainNode);
             break;
           case 261.6:
-            setCGain(gainNode);
+            setC4Gain(gainNode);
             break;
           case 329.6:
-            setEGain(gainNode);
+            setE4Gain(gainNode);
             break;
           case 392.0:
-            setGGain(gainNode);
+            setG4Gain(gainNode);
             break;
         }
 
@@ -277,28 +281,33 @@ export function MusicLazySusanRhythmPageTemplate() {
   }, []);
 
   useEffect(() => {
-    if (baseGain && cGain && eGain && gGain && drumGain) {
+    if (baseGain && c2Gain && e4Gain && g4Gain && c4Gain) {
       clearInterval(timerRef.current);
       timerRef.current = window.setInterval(
         () => {
           if (audioContextRef.current) {
-            beatRef.current = true;
-            setBeat(beatRef.current);
-            baseGain?.gain.setValueAtTime(
-              1,
-              audioContextRef.current.currentTime,
-            );
+            if (!isOpenRef.current && offBeatRef.current) {
+              offBeatRef.current = false;
+            } else {
+              beatRef.current = true;
+              setBeat(beatRef.current);
+              baseGain?.gain.setValueAtTime(
+                1,
+                audioContextRef.current.currentTime,
+              );
+              offBeatRef.current = true;
+            }
 
             if (isPlayRRef.current) {
-              if (cGain?.gain.value === 0) {
-                cGain.gain.setValueAtTime(
+              if (c4Gain?.gain.value === 0) {
+                c4Gain.gain.setValueAtTime(
                   1,
                   audioContextRef.current.currentTime,
                 );
               }
             } else {
-              if (cGain?.gain.value === 1) {
-                cGain.gain.setValueAtTime(
+              if (c4Gain?.gain.value === 1) {
+                c4Gain.gain.setValueAtTime(
                   0,
                   audioContextRef.current.currentTime,
                 );
@@ -306,15 +315,15 @@ export function MusicLazySusanRhythmPageTemplate() {
             }
 
             if (isPlayGRef.current) {
-              if (eGain?.gain.value === 0) {
-                eGain.gain.setValueAtTime(
+              if (e4Gain?.gain.value === 0) {
+                e4Gain.gain.setValueAtTime(
                   1,
                   audioContextRef.current.currentTime,
                 );
               }
             } else {
-              if (eGain?.gain.value === 1) {
-                eGain.gain.setValueAtTime(
+              if (e4Gain?.gain.value === 1) {
+                e4Gain.gain.setValueAtTime(
                   0,
                   audioContextRef.current.currentTime,
                 );
@@ -322,15 +331,15 @@ export function MusicLazySusanRhythmPageTemplate() {
             }
 
             if (isPlayBRef.current) {
-              if (gGain?.gain.value === 0) {
-                gGain.gain.setValueAtTime(
+              if (g4Gain?.gain.value === 0) {
+                g4Gain.gain.setValueAtTime(
                   1,
                   audioContextRef.current.currentTime,
                 );
               }
             } else {
-              if (gGain?.gain.value === 1) {
-                gGain.gain.setValueAtTime(
+              if (g4Gain?.gain.value === 1) {
+                g4Gain.gain.setValueAtTime(
                   0,
                   audioContextRef.current.currentTime,
                 );
@@ -338,15 +347,15 @@ export function MusicLazySusanRhythmPageTemplate() {
             }
 
             if (isPlayYRef.current) {
-              if (drumGain?.gain.value === 0) {
-                drumGain.gain.setValueAtTime(
+              if (c2Gain?.gain.value === 0) {
+                c2Gain.gain.setValueAtTime(
                   1,
                   audioContextRef.current.currentTime,
                 );
               }
             } else {
-              if (drumGain?.gain.value === 1) {
-                drumGain.gain.setValueAtTime(
+              if (c2Gain?.gain.value === 1) {
+                c2Gain.gain.setValueAtTime(
                   0,
                   audioContextRef.current.currentTime,
                 );
@@ -364,14 +373,14 @@ export function MusicLazySusanRhythmPageTemplate() {
                   );
                 }
               },
-              1000 / (bpm / 60) / 4,
+              1000 / ((bpm * 2) / 60) / 4,
             );
           }
         },
-        1000 / (bpm / 60),
+        1000 / ((bpm * 2) / 60),
       );
     }
-  }, [baseGain, cGain, eGain, gGain, drumGain]);
+  }, [baseGain, c4Gain, e4Gain, g4Gain, c2Gain]);
 
   useEffect(() => {
     if (rNeedleRef.current) {
@@ -417,25 +426,53 @@ export function MusicLazySusanRhythmPageTemplate() {
 
   return (
     <div data-is-show={!isLoading} data-beat={beat} className={styles.wrapper}>
-      <div className={styles.box}>
-        <canvas ref={previewRef} />
+      <div className={styles.background}>
+        <Sushi isOpen={isOpenRef.current} beat={beat} />
       </div>
-      <div className={styles.box}>
-        <canvas ref={rRef} />
-        <canvas data-color="r" ref={rNeedleRef} className={styles.needle} />
+      <div className={styles.content}>
+        <div className={styles.box}>
+          <canvas ref={previewRef} />
+        </div>
+        <div className={styles.rgb}>
+          <div
+            data-is-play={isPlayRRef.current}
+            className={classNames(styles.box, styles.red)}
+          >
+            <canvas ref={rRef} />
+            <canvas data-color="r" ref={rNeedleRef} className={styles.needle} />
+          </div>
+          <div
+            data-is-play={isPlayGRef.current}
+            className={classNames(styles.box, styles.green)}
+          >
+            <canvas ref={gRef} />
+            <canvas data-color="g" ref={gNeedleRef} className={styles.needle} />
+          </div>
+          <div
+            data-is-play={isPlayBRef.current}
+            className={classNames(styles.box, styles.blue)}
+          >
+            <canvas ref={bRef} />
+            <canvas data-color="b" ref={bNeedleRef} className={styles.needle} />
+          </div>
+          <div
+            data-is-play={isPlayYRef.current}
+            className={classNames(styles.box, styles.yellow)}
+          >
+            <canvas ref={yRef} />
+            <canvas data-color="y" ref={yNeedleRef} className={styles.needle} />
+          </div>
+        </div>
       </div>
-      <div className={styles.box}>
-        <canvas ref={gRef} />
-        <canvas data-color="g" ref={gNeedleRef} className={styles.needle} />
-      </div>
-      <div className={styles.box}>
-        <canvas ref={bRef} />
-        <canvas data-color="b" ref={bNeedleRef} className={styles.needle} />
-      </div>
-      <div className={styles.box}>
-        <canvas ref={yRef} />
-        <canvas data-color="y" ref={yNeedleRef} className={styles.needle} />
-      </div>
+      {/* <button
+        className={styles.button}
+        type="button"
+        onClick={() => {
+          isOpenRef.current = !isOpenRef.current;
+        }}
+      >
+        {isOpenRef.current ? 'CLOSE' : 'OPEN'}
+      </button> */}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import 'the-new-css-reset';
+import '@/styles/globals.css';
 import type { Metadata } from 'next';
 import { IBM_Plex_Sans_JP } from 'next/font/google';
 

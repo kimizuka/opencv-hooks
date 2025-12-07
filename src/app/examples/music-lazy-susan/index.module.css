@@ -1,6 +1,0 @@
-.wrapper {
-  > div {
-    position: fixed;
-    inset: 0;
-  }
-}
